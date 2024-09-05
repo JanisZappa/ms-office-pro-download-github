@@ -1,0 +1,16 @@
+X 320
+Y 216
+T 69120
+
+X 384
+Y 180 (270)
+
+2304
+950
+2188800
+2073600
+1.05
+
+Let's put the camera matrixes into the shader and move stuff in the shader
+Let's prepare static meshes ...
+Or how to render different material types

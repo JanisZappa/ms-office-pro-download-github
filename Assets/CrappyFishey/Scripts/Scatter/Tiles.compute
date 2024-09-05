@@ -1,0 +1,69 @@
+﻿#pragma kernel TileCheck
+#pragma kernel TileRender
+
+StructuredBuffer<int3> tilePos;
+StructuredBuffer<int> dirs;
+
+StructuredBuffer<int> visData;
+StructuredBuffer<int2> mapData;
+
+StructuredBuffer<int> dirVisData;
+
+RWStructuredBuffer<int> tileVis;
+
+uint tileCount, dirCount, tileX, renderCount, renderX;
+
+int playerTile, playerDir, pPosX, pPosY, pPosZ, dirSteps, dirStepHalf, SubDivisions;
+
+StructuredBuffer<int2> renderData;
+RWStructuredBuffer<int> RenderArgs;
+
+
+[numthreads(16,16,1)]
+void TileCheck (uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.y * tileX + id.x;
+    if(index >= tileCount)
+        return;
+        
+    int2 map = mapData[index];
+    int visible = 0;
+    for(int i = 0; i < map.y; i++)
+    {
+        int diff = abs(playerTile - visData[map.x + i]);
+        visible += 1 - min(diff, 1);
+    }
+        
+    visible = min(visible, 1);
+    
+    int3 offset    = tilePos[index] - int3(pPosX, pPosY, pPosZ);
+    int  distValue = max(abs(offset.x), max(abs(offset.y), abs(offset.z)));
+    
+    int tooBig = 1 - saturate(distValue - dirStepHalf);
+    
+    offset += dirStepHalf;
+    
+    int inView  = dirVisData[offset.x + offset.y * dirSteps + offset.z * (dirSteps * dirSteps) + playerDir];
+    int combine = visible * tooBig * inView;
+    int vis     = -1 + (distValue + 1) * combine;
+    
+    tileVis[index] = -1 + (max(SubDivisions - max(vis - 1, 0), 0) + 1) * step(-.5, vis);
+}
+
+
+[numthreads(16,16,1)]
+void TileRender (uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.y * renderX + id.x;
+    if(index >= renderCount)
+        return;
+        
+    int2 data = renderData[index];
+    
+    if(tileVis[data.x] == data.y)
+        RenderArgs[index * 5 + 1] = 1;
+    else
+        RenderArgs[index * 5 + 1] = 0;
+}
+
+

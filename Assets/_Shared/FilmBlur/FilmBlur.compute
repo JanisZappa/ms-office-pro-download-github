@@ -1,0 +1,39 @@
+﻿#pragma kernel Clear
+#pragma kernel Add
+#pragma kernel Finalize
+
+
+RWTexture2D<float4> Source;
+RWTexture2D<float4> Result;
+RWStructuredBuffer<float4>Math;
+
+uint ResX;
+uint ResY;
+float Div;
+
+
+[numthreads(16, 16, 1)]
+void Clear (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= ResX || id.y >= ResY)    return;
+
+    Math[id.x + id.y * ResX] = 0;
+}
+
+
+[numthreads(16, 16, 1)]
+void Add (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= ResX || id.y >= ResY)    return;
+    
+    Math[id.x + id.y * ResX] += Source[id.xy];
+}
+
+
+[numthreads(16, 16, 1)]
+void Finalize (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= ResX || id.y >= ResY)    return;
+    
+    Result[id.xy] = Math[id.x + id.y * ResX] * Div;
+}

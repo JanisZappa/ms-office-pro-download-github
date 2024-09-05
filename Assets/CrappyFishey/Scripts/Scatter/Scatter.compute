@@ -1,0 +1,106 @@
+﻿#pragma kernel CheckPts
+
+#pragma kernel ResetObj
+#pragma kernel CollectObj
+
+#pragma kernel RenderReset
+#pragma kernel RenderRead
+
+RWStructuredBuffer<int> tileVis;
+StructuredBuffer<int2> objData;
+StructuredBuffer<int2> ptData;
+
+RWStructuredBuffer<uint> Map;
+RWStructuredBuffer<uint> Found;
+
+StructuredBuffer<float4> Pos;
+
+RWStructuredBuffer<int> RenderCounter;
+RWStructuredBuffer<int> RenderArgs;
+
+uint objCount, ptCount, typeCount, objX, ptX, renderX;
+float3 CamP, CamF;
+int SubDivisions;
+
+float3 CamA, CamB, CamC, CamD;
+
+
+[numthreads(16,16,1)]
+void CheckPts (uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.y * ptX + id.x;
+    if(index >= ptCount)
+        return;
+        
+    int2 data = ptData[index];
+       
+    int vis = tileVis[data.x];
+    if(vis > -1)// && SubDivisions - vis < 1)
+        Found[data.y] = 1;
+}
+
+
+[numthreads(16,16,1)]
+void ResetObj (uint3 id : SV_DispatchThreadID)
+{
+     uint index = id.y * objX + id.x;
+     if(index >= objCount)
+         return;
+         
+     Found[index] = 0;
+}
+
+
+float RotRadX(float2 v, float radians)
+{
+    return cos(radians) * v.x - sin(radians) * v.y;
+}
+    
+    
+[numthreads(16,16,1)]
+void CollectObj (uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.y * objX + id.x;
+    if(index >= objCount)
+        return;
+        
+    if(Found[index] == 0)
+        return;
+        
+    float4 PosData = Pos[index];
+    float3 dir = PosData.xyz - CamP;
+        
+    if(step(dot(dir, CamA), PosData.w) + 
+       step(dot(dir, CamB), PosData.w) + 
+       step(dot(dir, CamC), PosData.w) + 
+       step(dot(dir, CamD), PosData.w) > 0)
+        return;
+       
+    int2 data = objData[index];
+        
+    int i;
+    InterlockedAdd(RenderArgs[data.x * 5 + 1], 1, i);
+    Map[i + data.y] = index;
+}
+
+ 
+[numthreads(16,16,1)]
+void RenderReset (uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.y * renderX + id.x;
+    if(index >= typeCount)
+        return;
+        
+    RenderArgs[index * 5 + 1] = 0;
+}
+
+
+[numthreads(16,16,1)]
+void RenderRead (uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.y * renderX + id.x;
+    if(index >= typeCount)
+        return;
+        
+    RenderCounter[index] = RenderArgs[index * 5 + 1];
+}

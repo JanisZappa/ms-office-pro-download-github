@@ -1,0 +1,83 @@
+ChessBoard Color
+
+
+
+Player ID
+If 0 type name and send it to Server -> get ID
+
+Game Creation
+Select Friend Create Game
+Send Friend ID Get GameID
+Show Game as Waiting ...
+On Server create game file 
+Move 0
+
+and request file
+Friend ID GameID
+
+Friend Checks Invitations in Menu
+If he say yes to invitation
+Move is set to 1
+else
+Move is set to -1
+
+Friend Moves first
+Move is set to 2
+
+If After Invitation Move of game is set to -1
+Game get's deleted
+
+if Game is Over 
+Move is set to -2
+
+Bauer
+Turm
+Läufer
+Pferd
+König
+Dame
+
+64 Felder + Nicht auf Feld = 65
+
+16 Figuren pro Team
+32 Figuren total
+
+32 * 65 = 
+
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+
+
+
+
+
+Move file
+Move Number / Piece ID / State ID
+
+
+Message
+Receiver / Sender / Action
+
+
+65535 MAX Value
+65 Signals with 1000 Options
+32 Characters
+
+65 GameStartSignal 0 = White 1 = Black
+
+CD00FG2G

@@ -1,0 +1,111 @@
+﻿#pragma kernel Mix
+#pragma kernel Grade
+#pragma kernel CreateColors
+
+StructuredBuffer<float4> SourceColors;
+StructuredBuffer<float4> SourceOK;
+RWStructuredBuffer<float4> Palette;
+Texture2D<float4> Frame;
+RWTexture2D<float4> Store;
+RWTexture2D<float4> Result;
+
+Texture2D<float4> PaletteTex;
+
+int xRes, yRes, pixels, frame, sourceCount;
+float Bars, Correction;
+
+int FrameCount;
+float FrameWeight;
+int F;
+
+
+[numthreads(32,32,1)]
+void Mix (uint3 id : SV_DispatchThreadID)
+{
+    float4 c2 = float4(0, 0, 0, 0);
+    float wT = 0;
+    for(int x = 0; x < 6; x++)
+    for(int y = 0; y < 5; y++)
+    {
+        float4 f = Frame[id.xy + uint2(x * xRes, y * yRes)];
+        float w = 30 - (y * 6 + x) * .5;
+        c2 += f * w;
+        wT += w;
+    }
+    
+    c2 /= wT;
+    
+    int store = F % 16;
+    Store[id.xy + uint2(store % 4 * xRes, floor(store / 4) * yRes)] = c2;
+}
+
+
+[numthreads(32,32,1)]
+void Grade (uint3 id : SV_DispatchThreadID)
+{
+    float4 c2 = float4(0, 0, 0, 0);
+    int wT = 0;
+    for(int i = 0; i < 16; i++)
+    {
+        int w = pow(2, 16 - i) + 65536 * .035;
+        int store = (F + 16 ) % 16;
+        c2 += Store[id.xy + uint2(store % 4 * xRes, floor(store / 4) * yRes)] * w;
+        wT += w;
+    }
+        
+    c2 /= wT;
+     
+    //float4 c2 = Store[id.xy + uint2(F % 6 * xRes, 0)];
+     
+    //  Black Bars  //   
+    float bar = step(abs(yRes * .5 - id.y), yRes * .5 * (1.0 - Bars * 1.01));
+    c2 *= bar;
+    
+    //Result[id.xy] = c2;
+    //return;
+    
+    float chessboard = frac((floor(id.x + id.y)) * .5) * 2;
+               
+    int r = min(round(c2.x * 255 + chessboard), 255);
+    int g = max(round(c2.y * 255 - chessboard), 0);
+    int b = min(round(c2.z * 255 + chessboard), 255);
+                
+    uint offset = (uint)(r + g * 256 + b * 256 * 256);
+    uint x = offset % 4096;
+    uint y = floor(offset / 4096);
+    Result[id.xy] =lerp(c2, PaletteTex[uint2(x, y)], 1);//Correction);
+                
+    //Result[id.xy] = lerp(c2, Palette[offset], Correction);
+}
+
+
+
+
+float CDist(float4 color, float4 other)
+{
+    return abs(color.r - other.r) + 
+           abs(color.g - other.g) + 
+           abs(color.b - other.b);
+}
+
+
+[numthreads(8,8,8)]
+void CreateColors (uint3 id : SV_DispatchThreadID)
+{       
+    uint index = id.x + id.y * 256 + id.z * (256 * 256);
+    
+    float4 c = float4(id.x / 255.0, id.y / 255.0, id.z / 255.0, 0);
+    float4 found = float4(0,0,0,0);
+    float m = 10000000;
+    
+    for(int e = 0; e < sourceCount; e++)
+    {
+        float4 c2 = SourceColors[e];
+        float dist = CDist(c, c2);
+        
+        found = lerp(found, c2, step(dist, m));
+        m = min(m, dist);
+    }
+    
+    Palette[index] = found;
+}

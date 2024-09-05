@@ -1,0 +1,37 @@
+﻿#pragma kernel AddLight
+
+struct MCLight
+{
+    float3 pos;
+    float4 color;
+    float  radius;
+};
+
+StructuredBuffer<MCLight> Lights;
+RWTexture3D<float4> Result;
+
+float3 Min;
+float Step;
+float Delta;
+
+[numthreads(4, 4, 4)]
+void AddLight (uint3 id : SV_DispatchThreadID)
+{
+    float3 pos = float3(id.xyz) * Step + Min;
+    
+    float4 value = float4(0, 0, 0, 1);
+    value = Result[id.xyz] * (1.0 - Delta * 6);
+    
+    for(int i = 0; i < 256; i++)
+    {
+        MCLight l = Lights[i];
+        float3 p  = l.pos;
+               
+        float amount = 1.0 - saturate(length(p - pos) * l.radius);
+        value += l.color * amount * .45 * .08;
+    }
+
+    Result[id.xyz] = value;
+}
+
+

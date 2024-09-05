@@ -1,0 +1,62 @@
+Make some floor
+
+
+
+Walls Would be interesting
+They do not necessary belong on a different layer
+
+Floor belongs on a different layer
+
+
+Make a character
+
+
+Sprites
+Walls
+Shadows
+Floor
+
+
+
+
+Do something like mother3
+Emotional acting and scenario
+Simple graphics still gritty
+Not sf phony
+
+
+
+   
+//  Directional  //
+   /*{
+       float3 L = normalize(float3(-.025, .6, -.2));
+       float m = (lerp(1, lgt.a, pow(saturate(L.y), 2) * sprite) * lerp(1, lgt.z, pow(saturate(-L.y), 2) * sprite));     
+       float dP = dot(L, normal);
+             dP = max(0, dP) * .25 * m + .75 * (dP * .5 + .5) * (m * .25 + .75) + (-dP * .5 + .5) * sss * .25;
+       
+       result += PBR(color, wPos, normal, L, V, dtl.xyz, dP, dP, 1) * float3(.015, .0275, .0425) * .25 * 1 * h;
+   }
+   {
+       float3 L = normalize(float3(0, 1.25, 12));
+       float m = (lerp(1, lgt.a, pow(saturate(L.y), 2) * sprite) * lerp(1, lgt.z, pow(saturate(-L.y), 2) * sprite));   
+       float dP = dot(L, normal);
+             dP = max(0, dP) * .25 * m + .75 * (dP * .5 + .5) * (m * .25 + .75) + (-dP * .5 + .5) * sss * .25;
+       
+       result += PBR(color, wPos, normal, L, V, dtl.xyz, dP, dP, 1) * float3(.015, .0375, .0425) * 2 * h;
+   }
+   {
+       float3 L = normalize(float3(-10, .6, -1));
+       float m = (lerp(1, lgt.a, pow(saturate(L.y), 2) * sprite) * lerp(1, lgt.z, pow(saturate(-L.y), 2) * sprite));     
+       float dP = dot(L, normal);
+             dP = max(0, dP) * .25 * m + .75 * (dP * .5 + .5) * (m * .25 + .75) + (-dP * .5 + .5) * sss * .25;
+      
+       result += PBR(color, wPos, normal, L, V, dtl.xyz, dP, dP, 1) * float3(.0425, .015, .0275) * .2* 2 * h;
+   }
+   {
+       float3 L = normalize(float3(10, .6, -4));
+       float m = (lerp(1, lgt.a, pow(saturate(L.y), 2) * sprite) * lerp(1, lgt.z, pow(saturate(-L.y), 2) * sprite));        
+        float dP = dot(L, normal);
+             dP = max(0, dP) * .25 * m + .75 * (dP * .5 + .5) * (m * .25 + .75) + (-dP * .5 + .5) * sss * .25;
+       
+       result += PBR(color, wPos, normal, L, V, dtl.xyz, dP, dP, 1) * float3(.015, .0425, .0275) * .15 * 2 * h;
+   }*/

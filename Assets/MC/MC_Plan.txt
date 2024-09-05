@@ -1,0 +1,30 @@
+volume tex 3d sample prebake
+
+
+
+CrossHair
+
+non square bake res
+lean
+flap
+shoot
+
+chunk visibility like scatter
+only show chunks that are visible
+
+Near Field Light texture for Camera
+
+Really Bat
+All Bats Are Off!
+Off the Bat!
+Wanna Bat?
+
+
+int index 
+to uint3
+
+
+
+
+
+

@@ -1,0 +1,70 @@
+﻿#pragma kernel Copy
+#pragma kernel AddToFrame
+#pragma kernel SaveFrameA
+#pragma kernel SaveFrameB
+#pragma kernel Merge
+
+RWTexture2D<float4> Source;
+RWTexture2D<float4> Result;
+RWStructuredBuffer<float4> FrameBuffer;
+RWTexture2D<float4> FrameAResult;
+RWTexture2D<float4> FrameBResult;
+
+float Blend;
+float Weight;
+float2 NoiseOffset;
+
+
+float noise(float2 coords) {
+    return frac(sin(dot(coords.xy + NoiseOffset, float2(12.9898,78.233))) * 43758.5453);
+}
+
+
+[numthreads(16, 16, 1)]
+void Copy (uint3 id : SV_DispatchThreadID)
+{
+    Result[id.xy] = Source[id.xy] * 2 + noise(float2(id.xy));
+}
+
+
+[numthreads(16, 16, 1)]
+void AddToFrame (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= 1280 || id.y >= 720)    return;
+    uint index = id.x + id.y * 1280;
+    float n = noise(float2(id.xy)) * .25 + .75;
+    float w = Weight * n;
+    FrameBuffer[index] += float4(Source[id.xy].xyz * w, w);
+}
+
+
+[numthreads(16, 16, 1)]
+void SaveFrameA (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= 1280 || id.y >= 720)    return;
+    uint index = id.x + id.y * 1280;
+    float4 f = FrameBuffer[index];
+    FrameAResult[id.xy] = float4((f.xyz / f.w), 1);
+    FrameBuffer[index]  = float4(0, 0, 0, 0);
+}
+
+
+[numthreads(16, 16, 1)]
+void SaveFrameB (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= 1280 || id.y >= 720)    return;
+    uint index = id.x + id.y * 1280;
+    float4 f = FrameBuffer[index];
+    FrameBResult[id.xy] = float4((f.xyz / f.w), 1);
+    FrameBuffer[index]  = float4(0, 0, 0, 0);
+}
+
+
+[numthreads(16, 16, 1)]
+void Merge (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= 1280 || id.y >= 720)    return;
+    uint index = id.x + id.y * 1280;
+    float n = (noise(float2(id.xy)) * 2 - 1) * .01;
+    Result[id.xy] = FrameAResult[id.xy] * (1.0 - Blend) + FrameBResult[id.xy] * Blend * (1.0 - abs(Blend - .5) * .01) + n.xxxx;
+}

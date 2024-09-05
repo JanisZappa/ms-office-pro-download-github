@@ -1,0 +1,5 @@
+Banana                  15                  0.1
+Hammer                  100                 1
+Coffee                  1100                8
+Rock_n_Roll             12000               47
+Hamburger               130000              260

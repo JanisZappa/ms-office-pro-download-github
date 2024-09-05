@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91326e1aeaf7aa049b851ae793749b52, type: 3}
+  m_Name: FPS_Player
+  m_EditorClassIdentifier: 
+  forceTweaks:
+  - forceName: hitForce
+    speed: 17.5
+    damp: 4.75
+  - forceName: VForce
+    speed: 184.4
+    damp: 19
+  - forceName: CrouchForce
+    speed: 45
+    damp: 8.5
+  - forceName: CrouchLookForce
+    speed: 17
+    damp: 6.5
+  - forceName: headRotForce
+    speed: 244
+    damp: 21
+  - forceName: headPosForce
+    speed: 388
+    damp: 17.8
+  - forceName: headPosYForce
+    speed: 2528
+    damp: 63.8

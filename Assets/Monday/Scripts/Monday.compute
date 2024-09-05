@@ -1,0 +1,51 @@
+﻿#pragma kernel CopyIntoBiggerTex
+#pragma kernel Blur
+
+Texture2D<float4> Source;
+RWTexture2D<float4> Result;
+RWTexture2D<float4> BlurResult;
+
+uint Multi;
+[numthreads(32,32,1)]
+void CopyIntoBiggerTex (uint3 id : SV_DispatchThreadID)
+{
+    Result[id.xy] = pow(Source[uint2(floor(id.x * 1.0 / Multi), floor(id.y * 1.0 / Multi))], 1.0 /2.2);
+}
+
+#define count 9
+#define minus 4
+#define pp 3 
+#define pp2 5    
+
+uint XRes;    
+uint YRes;
+
+
+SamplerState samplerSource;
+
+[numthreads(32,32,1)]
+void Blur (uint3 id : SV_DispatchThreadID)
+{
+    float4 mix = float4(0, 0, 0, 0);
+    float weight = 0;
+    
+    [unroll]
+    for(int y = 0; y < count; y++)
+    {
+        float wy = pow(1 + minus - abs(y - minus), pp2);
+        int yS = (y - minus);
+        [unroll]
+        for(int x = 0; x < count; x++)
+        {
+            float wx = pow(1 + minus - abs(x - minus), pp);
+            float w = wx + wy;
+            weight += w;
+            
+            mix += Result[id.xy + int2((x - minus), (y - minus))] * w;
+        }
+    }
+       
+    mix /= weight;
+       
+    BlurResult[id.xy] = BlurResult[id.xy] * (1 - .44444) + .44444 * mix;
+}

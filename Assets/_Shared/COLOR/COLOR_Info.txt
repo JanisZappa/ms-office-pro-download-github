@@ -1,0 +1,15 @@
+COLOR		V.1.0
+-----------------
+COLOR COPY WINDOW
+-----------------
+
+Pressing ALT + C will toggle the 'Copy 2 C#' window.
+Pressing ALT + X will toggle the 'Copy 2 JS' window.
+Pick a color and close the window. A string of the set color will get copied to the dashboard.
+Use it in your scripting language of choice.
+
+PRESET COLORS 4U
+----------------
+COLOR.white
+COLOR.black
+COLOR.grey.light

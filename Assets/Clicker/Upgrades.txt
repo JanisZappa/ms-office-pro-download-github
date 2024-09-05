@@ -1,0 +1,19 @@
+Banana                  100                 2
+Banana                  500                 2
+Banana                  10000               2
+
+
+Hammer                  1000                2
+Hammer                  5000                2
+Hammer                  50000               2
+
+
+Coffee                  11000               2
+Coffee                  55000               2
+
+
+Rock_n_Roll             120000              2
+Rock_n_Roll             600000              2
+
+
+Hamburger				1300000				2

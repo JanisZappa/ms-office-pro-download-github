@@ -1,0 +1,154 @@
+﻿#pragma kernel PaintLocal
+#pragma kernel RaycastLocal
+#include "Packages/jp.keijiro.noiseshader/Shader/ClassicNoise2D.hlsl"
+#include "Packages/jp.keijiro.noiseshader/Shader/ClassicNoise3D.hlsl"
+#include "Packages/jp.keijiro.noiseshader/Shader/SimplexNoise2D.hlsl"
+#include "Packages/jp.keijiro.noiseshader/Shader/SimplexNoise3D.hlsl"
+
+struct SampleInfo
+{
+    uint3 id;
+    uint maxSteps;
+    float3 dir;
+    int dummy;
+};
+
+RWTexture3D<float4> _VolumeTex;
+RWTexture3D<float4> _ResultTex;
+Texture3D _SourceTex;
+SamplerState sampler_SourceTex;
+
+StructuredBuffer<SampleInfo> map;
+int MapSteps;
+
+float3 _Min;
+float _Size;
+int _Cells;
+float4 _ColorA, _ColorB;
+float _Time;
+float _DT;
+float3 _CamPos;
+
+float4x4 ToBox;
+float4x4 FromBox;
+
+
+
+
+float SmoothStep(float t)
+{
+    t = -2.0F * t * t * t + 3.0F * t * t;
+    return t;
+}
+
+
+float4 SampleButt(float3 pos)
+{
+    //return float4(1, 0, 0, .05);
+
+    float x = saturate(pos.x) * _Cells;
+    float y = saturate(pos.y) * _Cells;
+    float z = saturate(pos.z) * _Cells;
+    
+    float xa = floor(x), xb = ceil(x), xl = x - xa;
+    float ya = floor(y), yb = ceil(y), yl = y - ya;
+    float za = floor(z), zb = ceil(z), zl = z - za;
+    
+    float4 a = lerp(_VolumeTex[uint3(xa, ya, za)], _VolumeTex[uint3(xb, ya, za)], xl);
+    float4 b = lerp(_VolumeTex[uint3(xa, ya, zb)], _VolumeTex[uint3(xb, ya, zb)], xl);
+    float4 c = lerp(_VolumeTex[uint3(xa, yb, zb)], _VolumeTex[uint3(xb, yb, zb)], xl);
+    float4 d = lerp(_VolumeTex[uint3(xa, yb, za)], _VolumeTex[uint3(xb, yb, za)], xl);
+    
+    float4 e = lerp(a, b, zl);
+    float4 f = lerp(d, c, zl);
+    
+    return lerp(e, f, yl);
+}
+
+
+float BeerLambert(float absorptionCoefficient, float distanceTraveled)
+{
+    return exp(-absorptionCoefficient * distanceTraveled);
+}
+
+
+float4 SampleTex(float3 dir, uint maxSteps)
+{
+    const int x = 1;
+    maxSteps /= x;
+    float c = _Cells * 1.0 / x;
+    float stepp = 1.0 / c;
+    float3 pos  = (float3(0, 0, 0) - _Min) / _Size;
+    
+    float multi  = c * 1.0 / 64 * .35 * x;
+    
+    float  opaqueVisiblity = 1.0f;
+    float3 volumetricColor = float3(0.0f, 0.0f, 0.0f);
+    
+    float distanceInVolume = 0.0f;
+    float signedDistance = 0.0;
+    for(int i = 0; i < maxSteps; i++)
+    {
+        float dist = i * stepp;
+        
+        if(opaqueVisiblity < .00001)
+            break;
+            
+        float4 src = SampleButt(pos + dir * dist);
+
+        float previousOpaqueVisiblity = opaqueVisiblity;
+        opaqueVisiblity *= BeerLambert(src.a * multi, stepp * _Size);
+        float absorptionFromMarch = previousOpaqueVisiblity - opaqueVisiblity;
+        
+        volumetricColor += absorptionFromMarch * src.xyz;
+    }
+    
+    return float4(saturate(volumetricColor), 1 - opaqueVisiblity);
+}
+
+
+void SetResult(uint3 id, float4 sample)
+{
+    float dt = _DT * 10;
+    
+    _ResultTex[id] = _ResultTex[id] * (1.0 - dt) + sample * dt;
+}
+
+
+[numthreads(256, 1, 1)]
+void PaintLocal (uint3 id : SV_DispatchThreadID)
+{
+    uint3 mapPos = map[id.x % MapSteps].id;
+    float3 pos = _Min + (mapPos * 1.0 / (_Cells - 1)) * _Size;
+           pos = mul(FromBox, float4(pos, 1));
+           
+    float l = saturate((pos.y - 40) / 20);
+          l = SmoothStep(l);
+    float n = 1.0;// - pow(abs(l - .5) * 2, 2);
+          
+    float3 p    = pos;
+           p.y *= 1.6;
+           
+           l = saturate(SimplexNoiseGrad(p * .0148 * .55) * .3 * n + SimplexNoiseGrad(p * .071 * .55) * .15 * n  + l);
+          
+    float4 c = lerp(_ColorA, _ColorB, l);   
+    float  x = pow(saturate(length(pos - float3(sin(_Time * .75) * 55, 0, 0)) * .1), 2);
+           c = float4(lerp(float3(1, .1, .12) * 3, c.xyz, x), c.a * (8 - x * 7));
+          
+    _VolumeTex[mapPos] = c;
+}
+
+
+[numthreads(256, 1, 1)]
+void RaycastLocal (uint3 id : SV_DispatchThreadID)
+{
+    SampleInfo info = map[id.x % MapSteps];
+    
+    _ResultTex[info.id] = SampleTex(info.dir, info.maxSteps);
+    return;
+    /*float dt = _DT * 2;
+    
+    _ResultTex[info.id] = 
+    _ResultTex[info.id] * (1.0 - dt) + 
+    SampleTex(info.dir, info.maxSteps) * dt;*/
+}

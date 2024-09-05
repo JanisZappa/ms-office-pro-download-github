@@ -1,0 +1,125 @@
+﻿#pragma kernel Solve
+#pragma kernel Smooth
+#pragma kernel Render
+
+
+StructuredBuffer<int>Ids;
+StructuredBuffer<float3>Dirs;
+
+RWStructuredBuffer<float>Height;
+RWStructuredBuffer<float>Flow;
+RWStructuredBuffer<float>Flow2;
+RWStructuredBuffer<float>OldHeight;
+RWStructuredBuffer<float>OldFlow;
+
+StructuredBuffer<float>Input;
+
+RWStructuredBuffer<float4>Result;
+
+int Count;
+float Speed;
+float Lift;
+
+
+[numthreads(32,1,1)]
+void Solve (uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x % Count;
+    
+    float h = OldHeight[index];
+    
+    float total = 0;
+    float b = .000525 * Speed;
+    float a = 1.0 - b;
+    float hit = 0;
+    
+    for(int i = 0; i < 6; i++)
+    {
+        uint iF = index * 6 + i;
+        int id = Ids[iF];
+        float factor = step(-.1, id);
+            
+        float f = (h - OldHeight[id]);
+        float fold = OldFlow[iF];
+        
+        float result = lerp(fold, (fold * a  + f * b), factor);
+              result -= Input[iF] * Lift * factor * .0000005;
+              //result += min(0, result - fold) * .01;
+        Flow[iF] = result;
+        
+        total += result * factor;
+        
+        hit += factor;
+    }
+
+    float gravity  = step(0, total);
+    Height[index] = max(-3, h + total * (-140 *(1 + .075 * gravity)) * Speed * hit / 6);
+}
+
+
+[numthreads(32,1,1)]
+void Smooth (uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x % Count;
+    float h = Height[index];
+    
+    for(int i = 0; i < 6; i++)
+    {
+        uint iF = index * 6 + i;
+        int id = Ids[iF];
+        float factor = step(-.1, id);
+            
+        float flow = 0;
+        float fold = Flow[iF];
+        
+        float w = 1;
+        for(int e = 0; e < 6; e++)
+        {
+            uint iF2 = index * 6 + e;
+            id = Ids[iF2];
+            float factor2 = step(-.1, id);
+                
+            //float ww = .002 + .8 * 1.75 * 1.35 * .99999 * max(0, Height[id] - h);
+            float ww = .35 * factor2 * Speed;
+            flow += Flow[id * 6 + i] * ww;
+            w += ww;
+        }
+        
+        
+        Flow2[iF] =  fold * .95 + (fold + flow) / w * factor * .05;
+    }
+}
+
+
+[numthreads(32,1,1)]
+void Render (uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x % Count;
+    
+    float h = Height[index];
+    float damp = (1.0 - .005 * Speed);
+    OldHeight[index] = h - sign(h) * .005 * min(abs(h), 1);
+    
+    float3 n = float3(0, 0, 0);
+    float count = 0;
+    for(int i = 0; i < 6; i++)
+    {
+        uint iF = index * 6 + i;
+        
+        int id = Ids[iF];
+        float factor = step(-.1, id);
+            
+        float3 d = Dirs[i];
+               d = normalize(float3(d.x, Height[id] - h, d.z));
+               
+        n += cross(cross(d, float3(0, -1.0, 0)), d) * factor;
+        
+        count += factor;
+        
+        OldFlow[iF] = Flow2[iF];// * damp;
+    }
+
+    n = n / count * -1.0;
+    
+    Result[index] = float4(h, n);
+}

@@ -1,0 +1,52 @@
+﻿#include "UnityCG.cginc"
+
+#pragma kernel Init
+#pragma kernel Update
+#pragma kernel AddStamp
+
+RWTexture2D<float4> Goal;
+RWTexture2D<float4> Result;
+RWTexture2D<float4> Motion;
+
+Texture2D<float4> Stamp;
+SamplerState linearClampSampler;
+int res;
+float2 offset;
+
+
+[numthreads(8,8,1)]
+void Init (uint3 id : SV_DispatchThreadID)
+{  
+    Goal[id.xy] = float4(.5, .5, 0, 0);
+    Motion[id.xy] = float4(.5, .5, .5, .5);
+}
+
+[numthreads(8,8,1)]
+void AddStamp (uint3 id : SV_DispatchThreadID)
+{  
+    float s = 25;
+
+    float2 uv = id.xy * 1.0 / res;
+           uv = (uv - .5) * s;
+           uv += 1 - ((offset - .5) * s + .5);
+          
+    Goal[id.xy] = Stamp.SampleLevel(linearClampSampler, uv, 0);
+}
+
+
+
+[numthreads(8,8,1)]
+void Update (uint3 id : SV_DispatchThreadID)
+{
+    float s = 45;
+
+    float2 uv = id.xy * 1.0 / res;
+           uv = (uv - .5) * s;
+           uv += 1 - ((offset - .5) * s + .5);
+         
+    float4 current = Result[id.xy]; 
+    float4 goal    = Stamp.SampleLevel(linearClampSampler, uv, 0);
+    
+    
+    Result[id.xy] = lerp(current, goal, unity_DeltaTime.z * 10);// * .0025);
+}
