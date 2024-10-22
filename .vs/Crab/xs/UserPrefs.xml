@@ -1,0 +1,19 @@
+﻿<Properties StartupConfiguration="{471A7F09-9D01-6805-E52C-927FB420C51B}|">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/CoolCompass/CityMarker.cs">
+    <Files>
+      <File FileName="Assets/CoolCompass/CoolCompass.cs" Line="236" Column="25" />
+      <File FileName="Assets/CoolCompass/Compass.cs" Line="69" Column="44" />
+      <File FileName="Assets/CoolCompass/CityData.cs" Line="51" Column="41" />
+      <File FileName="Assets/CoolCompass/LocationMarker.cs" Line="42" Column="61" />
+      <File FileName="Assets/CoolCompass/PlaceMarker.cs" Line="1" Column="1" NotebookId="1" />
+      <File FileName="Assets/CoolCompass/CityMarker.cs" Line="1" Column="1" NotebookId="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="bfa73100-7d58-4440-9a48-ed5948e1fcf2" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+</Properties>
